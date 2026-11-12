@@ -1,0 +1,29 @@
+[workspace]
+name = "Renderlocal"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[dependencies]
+python = ">=3.11"
+ipykernel = "==7.4.0"
+
+# Panel/Bokeh rendering stack
+bokeh = "==3.9.2"
+panel = "==1.9.4"
+panel-material-ui = "==0.16.1"
+
+# PyViz ecosystem
+holoviews = "==1.23.2"
+hvplot = "==0.12.2"
+param = "==2.4.2"
+pyviz_comms = "==3.0.6"
+colorcet = "==3.2.1"
+
+# Markdown rendering used by Panel
+markdown = "==3.11"
+mdit-py-plugins = "==0.6.1"
+linkify-it-py = "==2.2.0"
+
+# Common Panel/Bokeh support
+xyzservices = "==2026.9.1"
+nbconvert = "*"

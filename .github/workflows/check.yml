@@ -1,0 +1,54 @@
+name: Check environments
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  # Keep >= 0.68 (lock-file v7). Bump together with the version used locally.
+  PIXI_VERSION: v0.84.2
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pixi
+        run: |
+          curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION="${PIXI_VERSION}" bash
+          echo "${HOME}/.pixi/bin" >> "${GITHUB_PATH}"
+
+      - name: Cache rattler packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/rattler
+          key: rattler-${{ runner.os }}-${{ hashFiles('*/pixi.lock') }}
+          restore-keys: rattler-${{ runner.os }}-
+
+      # Mirrors what the juno-images Dockerfile does at build time, so a broken
+      # environment fails here instead of in an image build.
+      - name: Lock up to date, installs on linux-64, has a kernelspec
+        run: |
+          set -e
+          found=0
+          for ws in */; do
+            ws=${ws%/}
+            test -f "$ws/pixi.toml" || continue
+            echo "::group::$ws"
+            test -f "$ws/pixi.lock" || { echo "::error::$ws has no pixi.lock (run 'pixi lock')"; exit 1; }
+            grep -Eq "^name *= *\"$ws\"" "$ws/pixi.toml" \
+              || { echo "::error::$ws/pixi.toml [workspace] name must be \"$ws\" (directory name is the kernel display name)"; exit 1; }
+            grep -q '"linux-64"' "$ws/pixi.toml" \
+              || { echo "::error::$ws/pixi.toml platforms must include linux-64"; exit 1; }
+            pixi lock --check --manifest-path "$ws/pixi.toml"
+            pixi install --locked --all --manifest-path "$ws/pixi.toml"
+            ls "$ws"/.pixi/envs/*/share/jupyter/kernels/*/kernel.json >/dev/null 2>&1 \
+              || { echo "::error::$ws has no kernelspec (add ipykernel to its pixi.toml)"; exit 1; }
+            pixi list --manifest-path "$ws/pixi.toml" --no-install
+            echo "::endgroup::"
+            found=$((found+1))
+          done
+          test "$found" -gt 0 || { echo "::error::no <name>/pixi.toml found"; exit 1; }
+          echo "$found environment(s) OK"

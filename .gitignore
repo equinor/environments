@@ -136,6 +136,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# pixi (installed envs live next to each manifest; only pixi.toml + pixi.lock are tracked)
+.pixi/
+
 # Spyder project settings
 .spyderproject
 .spyproject
