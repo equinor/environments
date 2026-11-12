@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Only the actions used by .github/workflows/*.yml. Dependabot has no pixi/conda
+  # ecosystem; environment packages are pinned by hand in <name>/pixi.toml and
+  # re-locked with `pixi lock`.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
